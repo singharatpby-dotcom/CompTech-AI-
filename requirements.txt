@@ -1,0 +1,8 @@
+streamlit
+google-generativeai
+pandas
+python-dotenv
+openpyxl
+Flask==3.0.0
+
+
