@@ -3,7 +3,7 @@ import google.generativeai as genai
 import pandas as pd
 import streamlit as st
 from google.generativeai.types import HarmCategory, HarmBlockThreshold
-import dotenv
+from dotenv import load_dotenv
 
 # --- 1. การตั้งค่าหน้าจอและสไตล์ (Theme: Tech & Modern) ---
 st.set_page_config(page_title="CompTech AI - ผู้ช่วยคอมพิวเตอร์", page_icon="💻", layout="centered")
@@ -44,7 +44,7 @@ st.markdown("""
     """, unsafe_allow_html=True)
 
 # --- 2. โหลดค่า Environment ---
-dotenv.load_dotenv()
+load_dotenv()
 GOOGLE_API_KEY = os.getenv('GOOGLE_API_KEY')
 
 if not GOOGLE_API_KEY:
@@ -53,7 +53,7 @@ if not GOOGLE_API_KEY:
 
 genai.configure(api_key=GOOGLE_API_KEY)
 
-# --- 3. ตั้งค่า Model (Gemini 2.5 Flash) ---
+# --- 3. ตั้งค่า Model (Gemini 1.5 Flash) ---
 model_name = "models/gemini-2.5-flash-lite" 
 
 generation_config = {
@@ -62,7 +62,6 @@ generation_config = {
     "max_output_tokens": 2048,
 }
 
-# กำหนด System Instruction ให้เป็นผู้เชี่ยวชาญคอมพิวเตอร์
 PROMPT_WORKAW = """
 คุณคือ 'ผู้ช่วยอัจฉริยะด้านคอมพิวเตอร์และสารสนเทศ' CompTech AI ทำหน้าที่เป็นผู้ช่วยในห้องเรียนคอมพิวเตอร์ ให้ข้อมูลที่ถูกต้อง แม่นยำ และเป็นมืออาชีพเกี่ยวกับความรู้คอมพิวเตอร์ ฮาร์ดแวร์ ซอฟต์แวร์ และระบบปฏิบัติการ Windows
 
@@ -129,7 +128,7 @@ def load_context(path):
         return None
 
 # ไฟล์ Excel สำหรับเก็บความรู้เฉพาะทาง (เช่น ราคาอุปกรณ์, วิธีซ่อมเฉพาะอาการ)
-file_path = "Context for chatbot.xlsx" 
+file_path = "context_for_chatbot.xlsx" 
 file_content = load_context(file_path)
 
 # --- 5. ส่วน Sidebar ---
@@ -146,7 +145,7 @@ with st.sidebar:
     
     st.divider()
     st.caption("System Status: Online")
-    st.caption("Core: models/gemini-2.5-flash-lite")
+    #st.caption("Core: Gemini 2.5 Flash")
 
 # --- 6. ส่วนการแสดงผลแชท ---
 st.title("🤖 CompTech AI Support")
