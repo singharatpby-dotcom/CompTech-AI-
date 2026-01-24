@@ -57,7 +57,7 @@ genai.configure(api_key=GOOGLE_API_KEY)
 model_name = "models/gemini-2.5-flash-lite" 
 
 generation_config = {
-    "temperature": 0.4, # ปรับเพิ่มเล็กน้อยเพื่อให้ AI ช่วยแก้ปัญหาได้ยืดหยุ่นขึ้น
+    "temperature": 0.1, # ปรับเพิ่มเล็กน้อยเพื่อให้ AI ช่วยแก้ปัญหาได้ยืดหยุ่นขึ้น
     "top_p": 0.9,
     "max_output_tokens": 2048,
 }
@@ -190,3 +190,4 @@ if prompt := st.chat_input("สอบถามปัญหาคอมพิว�
 
             st.write(response_text)
             st.session_state["messages"].append({"role": "assistant", "content": response_text})
+
