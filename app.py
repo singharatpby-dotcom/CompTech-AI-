@@ -2,66 +2,105 @@ import os
 import google.generativeai as genai
 import pandas as pd
 import streamlit as st
-from google.generativeai.types import HarmCategory, HarmBlockThreshold
 from dotenv import load_dotenv
 
-# --- 1. การตั้งค่าหน้าจอและสไตล์ (Theme: Tech & Modern) ---
-st.set_page_config(page_title="CompTech AI - ผู้ช่วยคอมพิวเตอร์", page_icon="💻", layout="centered")
+# --- 1. การตั้งค่าหน้าจอ (เปิด Sidebar อัตโนมัติ) ---
+st.set_page_config(
+    page_title="CompTech AI", 
+    page_icon="💻", 
+    layout="centered",
+    initial_sidebar_state="expanded"  # บังคับเปิด Sidebar ทันที
+)
 
+# --- 2. CSS Styles (แก้ไข: เอาคำสั่งซ่อน Header ออกเพื่อให้ปุ่ม Sidebar กลับมา) ---
 st.markdown("""
     <style>
-    /* ปรับแต่งพื้นหลังและฟอนต์ */
-    .stApp {
+    @import url('https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;600&display=swap');
+
+    /* ตั้งค่าฟอนต์ */
+    html, body, p, h1, h2, h3, h4, h5, h6, span, div, label, button, input, textarea {
+        font-family: 'Kanit', sans-serif;
+    }
+
+    /* ซ่อนเฉพาะแถบสีรุ้งด้านบนสุด (Decoration) เพื่อความสวยงาม */
+    div[data-testid="stDecoration"] {
+        visibility: hidden;
+        height: 0px;
+    }
+
+    /* *** สำคัญ: ผมลบโค้ดที่ซ่อน Header ออกแล้ว เพื่อให้ปุ่มเปิด Sidebar กลับมาใช้งานได้ *** */
+
+    /* ปรับแต่ง Sidebar */
+    [data-testid="stSidebar"] {
         background-color: #0e1117;
-        color: #ffffff;
+        border-right: 1px solid rgba(0, 242, 255, 0.2);
     }
-    /* ปรับแต่งหัวข้อ */
-    h1 {
-        color: #00d4ff;
-        font-family: 'Courier New', Courier, monospace;
-        text-align: center;
-        text-shadow: 2px 2px 4px #000000;
+
+    /* Header Styling (ส่วนกลางหน้าจอ) */
+    .header-container {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        padding-top: 10px;
+        padding-bottom: 20px;
     }
-    /* ปรับแต่งกล่องแชท */
-    .stChatMessage {
-        border-radius: 15px;
-        margin-bottom: 10px;
+
+    .logo-title-wrapper {
+        display: flex;
+        align-items: center;
+        gap: 20px;
     }
-    /* ปรับแต่งปุ่มใน Sidebar */
-    .stButton>button {
-        width: 100%;
-        border-radius: 10px;
-        border: 1px solid #00d4ff;
-        background-color: transparent;
-        color: #00d4ff;
+
+    .neon-text {
+        font-size: 3.5rem;
+        font-weight: 700;
+        color: #00f2ff;
+        text-shadow: 0 0 10px #00f2ff, 0 0 20px #00f2ff;
+        margin: 0;
+        line-height: 1.2;
+    }
+
+    .subtitle {
+        font-size: 1.2rem;
+        color: #888;
+        margin-top: 5px;
+        letter-spacing: 0.5px;
+    }
+
+    /* Button Styling */
+    div.stButton > button {
+        background-color: transparent !important;
+        border: 1px solid #ff4b4b !important;
+        color: #ff4b4b !important;
+        border-radius: 8px;
+        padding: 0.5rem 1rem;
+        font-weight: 600;
         transition: 0.3s;
+        width: 100%;
     }
-    .stButton>button:hover {
-        background-color: #00d4ff;
-        color: #0e1117;
+    div.stButton > button:hover {
+        background-color: #ff4b4b !important;
+        color: white !important;
+        box-shadow: 0 0 15px rgba(255, 75, 75, 0.6);
     }
+
+    /* Chat Styling */
+    [data-testid="stChatMessage"] {
+        border-radius: 20px !important;
+        border: 1px solid rgba(0, 242, 255, 0.1) !important;
+    }
+    
+    .element-container:has(iframe) { display: none; }
     </style>
     """, unsafe_allow_html=True)
 
-# --- 2. โหลดค่า Environment ---
+# --- 3. โหลดค่า Environment ---
 load_dotenv()
 GOOGLE_API_KEY = os.getenv('GOOGLE_API_KEY')
-
-if not GOOGLE_API_KEY:
-    st.error("🔑 กรุณาตั้งค่า API Key ในระบบก่อนใช้งาน")
-    st.stop()
-
 genai.configure(api_key=GOOGLE_API_KEY)
 
-# --- 3. ตั้งค่า Model (Gemini 1.5 Flash) ---
-model_name = "models/gemini-2.5-flash-lite" 
-
-generation_config = {
-    "temperature": 0.1, # ปรับเพิ่มเล็กน้อยเพื่อให้ AI ช่วยแก้ปัญหาได้ยืดหยุ่นขึ้น
-    "top_p": 0.9,
-    "max_output_tokens": 2048,
-}
-
+# --- 4. System Instruction ---
 PROMPT_WORKAW = """
 คุณคือ 'ผู้ช่วยอัจฉริยะด้านคอมพิวเตอร์และสารสนเทศ' CompTech AI ทำหน้าที่เป็นผู้ช่วยในห้องเรียนคอมพิวเตอร์ ให้ข้อมูลที่ถูกต้อง แม่นยำ และเป็นมืออาชีพเกี่ยวกับความรู้คอมพิวเตอร์ ฮาร์ดแวร์ ซอฟต์แวร์ และระบบปฏิบัติการ Windows
 
@@ -110,84 +149,78 @@ Bot: "การจัดเรียงลำดับไฟล์ตามร�
 คลิกเลือก Name (ชื่อ) เพื่อให้ไฟล์เรียงตามตัวอักษรจาก ก-ฮ หรือ A-Z ค่ะ ไม่ทราบว่านักเรียนต้องการทราบวิธีการเรียงลำดับในรูปแบบอื่นเพิ่มเติมไหมคะ"
 """
 
-model = genai.GenerativeModel(
-    model_name=model_name,
-    generation_config=generation_config,
-    system_instruction=PROMPT_WORKAW
-)
 
-# --- 4. ฟังก์ชันจัดการข้อมูล (Knowledge Base) ---
+# --- 5. ตั้งค่า Model ---
+model_name = "models/gemini-2.5-flash-lite"
+try:
+    model = genai.GenerativeModel(
+        model_name=model_name,
+        generation_config = {
+            "temperature": 0.1, 
+            "top_p": 0.9,
+            "max_output_tokens": 2048,
+        },
+        system_instruction=PROMPT_WORKAW
+    )
+except Exception as e:
+    st.error(f"Error initializing model: {e}")
+
+# --- 6. ฟังก์ชันจัดการข้อมูล ---
 @st.cache_data
-def load_context(path):
-    try:
-        if os.path.exists(path):
+def load_hidden_context(path):
+    if os.path.exists(path):
+        try:
             df = pd.read_excel(path, engine='openpyxl')
             return df.to_string(index=False)
-        return None
-    except Exception as e:
-        return None
+        except: return ""
+    return ""
 
-# ไฟล์ Excel สำหรับเก็บความรู้เฉพาะทาง (เช่น ราคาอุปกรณ์, วิธีซ่อมเฉพาะอาการ)
-file_path = "context_for_chatbot.xlsx" 
-file_content = load_context(file_path)
+hidden_knowledge = load_hidden_context("context_for_chatbot.xlsx")
 
-# --- 5. ส่วน Sidebar ---
+# --- 7. ส่วน SIDEBAR ---
 with st.sidebar:
-    st.markdown("## ⚙️ IT Support Center")
+    st.markdown("### ⚙️ Control Panel")
     st.image("https://cdn-icons-png.flaticon.com/512/2001/2001405.png", width=80)
-    st.info("สอบถามเรื่อง: จัดสเปกคอม, แก้ไข Windows, เขียนโค้ด หรืออัปเกรดเครื่อง")
-    
-    if st.button("🗑️ Clear Terminal Cache"):
-        st.session_state["messages"] = [
-            {"role": "assistant", "content": "ระบบ Reboot เรียบร้อย... มีอะไรให้ CompTech ช่วยดูแลครับ?"}
-        ]
+    st.write("")
+    # ปุ่ม Reset
+    if st.button("🗑️ ล้างการสนทนา (Reset)", use_container_width=True):
+        st.session_state["messages"] = [{"role": "assistant", "content": "CompTech AI สวัสดีค่ะ นักเรียน สอบถามข้อมูลเกี่ยวกับคอมพิวเตอร์หรือระบบปฏิบัติการเรื่องใดคะ"}]
         st.rerun()
-    
-    st.divider()
-    st.caption("System Status: Online")
-    #st.caption("Core: Gemini 2.5 Flash")
 
-# --- 6. ส่วนการแสดงผลแชท ---
-st.title("🤖 CompTech AI Support")
-st.caption("Professional Computer & Technology Assistant")
+# --- 8. ส่วน HEADER ---
+st.markdown(f"""
+    <div class="header-container">
+        <div class="logo-title-wrapper">
+            <img src="https://cdn-icons-png.flaticon.com/512/4712/4712035.png" width="65">
+            <h1 class="neon-text">CompTech AI</h1>
+        </div>
+        <div class="subtitle">Professional Computer & Technology Assistant</div>
+    </div>
+    <hr style="border: 1px solid rgba(0, 242, 255, 0.2); margin-bottom: 30px;">
+    """, unsafe_allow_html=True)
 
+# --- 9. ส่วนแชท ---
 if "messages" not in st.session_state:
-    st.session_state["messages"] = [
-        {"role": "assistant", "content": "สวัสดีครับ ผม CompTech AI ยินดีต้อนรับเข้าสู่ศูนย์ช่วยเหลือด้านคอมพิวเตอร์ วันนี้มีปัญหาการใช้งานหรือต้องการปรึกษาเรื่องสเปกเครื่องไหมครับ?"}
-    ]
+    st.session_state["messages"] = [{"role": "assistant", "content": "CompTech AI สวัสดีค่ะ นักเรียน สอบถามข้อมูลเกี่ยวกับคอมพิวเตอร์หรือระบบปฏิบัติการเรื่องใดคะ"}]
 
-# แสดงประวัติการคุย
 for msg in st.session_state["messages"]:
-    with st.chat_message(msg["role"]):
+    av = "https://cdn-icons-png.flaticon.com/512/4712/4712035.png" if msg["role"] == "assistant" else "https://cdn-icons-png.flaticon.com/512/3048/3048122.png"
+    with st.chat_message(msg["role"], avatar=av):
         st.write(msg["content"])
 
-# รับคำถาม
-if prompt := st.chat_input("สอบถามปัญหาคอมพิวเตอร์... (เช่น คอมเปิดไม่ติดทำไง?)"):
+if prompt := st.chat_input("พิมพ์คำถามของคุณที่นี่..."):
     st.session_state["messages"].append({"role": "user", "content": prompt})
-    with st.chat_message("user"):
+    with st.chat_message("user", avatar="https://cdn-icons-png.flaticon.com/512/3048/3048122.png"):
         st.write(prompt)
 
-    with st.chat_message("assistant"):
-        with st.spinner("Analyzing system status..."):
+    with st.chat_message("assistant", avatar="https://cdn-icons-png.flaticon.com/512/4712/4712035.png"):
+        with st.spinner("Processing..."):
             try:
-                history = []
-                # ใส่ Context (ถ้ามี)
-                if file_content:
-                    history.append({"role": "user", "parts": [f"Technical Knowledge Base: {file_content}"]})
-                    history.append({"role": "model", "parts": ["รับทราบข้อมูลเทคนิคพื้นฐานครับ"]})
-                
-                # ดึงประวัติล่าสุด
-                for msg in st.session_state["messages"][-6:]:
-                    role = "model" if msg["role"] == "assistant" else "user"
-                    history.append({"role": role, "parts": [msg["content"]]})
-
-                chat_session = model.start_chat(history=history)
-                response = chat_session.send_message(prompt)
-                response_text = response.text
-                
+                rich_prompt = f"Context from Database:\n{hidden_knowledge}\n\nStudent Question: {prompt}"
+                response = model.generate_content(rich_prompt)
+                ans = response.text
             except Exception as e:
-                response_text = f"ขออภัยครับ เกิดข้อผิดพลาดในระบบประมวลผล: {str(e)}"
-
-            st.write(response_text)
-            st.session_state["messages"].append({"role": "assistant", "content": response_text})
-
+                ans = f"เกิดข้อผิดพลาดของระบบ: {str(e)}"
+            
+            st.write(ans)
+            st.session_state["messages"].append({"role": "assistant", "content": ans})
